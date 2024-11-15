@@ -1,7 +1,6 @@
 package org.aba2.calendar.common.domain.friend.model;
 
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,13 +11,18 @@ import org.aba2.calendar.common.domain.friend.model.enums.FriendStatus;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Entity
+@Table(name = "friend")
 public class FriendEntity {
 
-    private String toUserId;
+    @Id
+    private String friendId;
 
-    private String fromUserId;
+    private String fromUserId; // 친구 요청을 보낸 사용자 ID
 
-//    @Enumerated(EnumType.STRING)
+    private String toUserId;   // 친구 요청을 받은 사용자 ID
+
+    @Enumerated(EnumType.STRING)
     private FriendStatus status;
 
 }
