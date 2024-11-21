@@ -1,9 +1,9 @@
 package org.aba2.calendar.common.domain.user.controller;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.aba2.calendar.common.api.Api;
-import org.aba2.calendar.common.domain.token.model.TokenResponse;
 import org.aba2.calendar.common.domain.user.business.UserBusiness;
 import org.aba2.calendar.common.domain.user.model.UserLoginRequest;
 import org.aba2.calendar.common.domain.user.model.UserRegisterRequest;
@@ -28,13 +28,14 @@ public class UserOpenApiController {
 
     // 로그인
     @PostMapping("/login")
-    public Api<TokenResponse> login(
-            @Valid
+    public Api<UserResponse> login(
             @RequestBody
-            Api<UserLoginRequest> userLoginRequestApi
+            Api<UserLoginRequest> userLoginRequestApi,
+            HttpServletResponse res
     ) {
 
-        var response = userBusiness.login(userLoginRequestApi);
+        System.out.println("hi");
+        var response = userBusiness.login(userLoginRequestApi, res);
 
         return Api.OK(response);
     }

@@ -19,12 +19,13 @@ public class UserApiController {
 
     private final UserBusiness userBusiness;
 
-    @GetMapping("/me")
-    public Api<UserResponse> me(
+    @GetMapping("/info")
+    public Api<UserResponse> info(
             @UserSession
             User user
     ) {
-        var response = userBusiness.me(user);
+        var response = userBusiness.info(user);
+
         return Api.OK(response);
     }
 

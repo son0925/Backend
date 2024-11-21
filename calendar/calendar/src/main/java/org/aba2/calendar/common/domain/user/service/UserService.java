@@ -66,4 +66,9 @@ public class UserService {
                 }).orElseThrow(() -> new ApiException(ErrorCode.NULL_POINT));
 
     }
+
+    public UserEntity findByIdWithThrow(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.NULL_POINT, "사용자를 찾을 수 없습니다."));
+    }
 }

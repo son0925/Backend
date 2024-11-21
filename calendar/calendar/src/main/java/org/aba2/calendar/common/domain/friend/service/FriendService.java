@@ -62,6 +62,8 @@ public class FriendService {
 
     }
 
+    // 초대 응답
+
 
     // 상태 변환
     public FriendEntity statusSettings(String fromUserId, String toUserId, FriendStatus status) {

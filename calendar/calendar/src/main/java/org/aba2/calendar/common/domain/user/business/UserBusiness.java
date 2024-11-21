@@ -1,10 +1,10 @@
 package org.aba2.calendar.common.domain.user.business;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.aba2.calendar.common.annotation.Business;
 import org.aba2.calendar.common.api.Api;
 import org.aba2.calendar.common.domain.token.business.TokenBusiness;
-import org.aba2.calendar.common.domain.token.model.TokenResponse;
 import org.aba2.calendar.common.domain.user.converter.UserConverter;
 import org.aba2.calendar.common.domain.user.model.User;
 import org.aba2.calendar.common.domain.user.model.UserLoginRequest;
@@ -26,23 +26,27 @@ public class UserBusiness {
 
     private final TokenBusiness tokenBusiness;
 
-    public TokenResponse login(
-            Api<UserLoginRequest> userLoginRequest
-    ) {
-        // Null 인지 확인하기
-        if (Objects.isNull(userLoginRequest) || Objects.isNull(userLoginRequest.getBody())) {
-            // 들어온 데이터가 없거나 body 데이터가 없으면 에러 발생
+    public UserResponse login(Api<UserLoginRequest> req, HttpServletResponse response) {
+
+        System.out.println("hi");
+        var user = req.getBody();
+
+        if (Objects.isNull(user) || user.getUserId() == null || user.getPassword() == null) {
             throw new ApiException(ErrorCode.NULL_POINT);
         }
 
-        var data = userLoginRequest.getBody();
+        var userId = user.getUserId();
+        var password = user.getPassword();
 
-        var userId = data.getUserId();
-        var password = data.getPassword();
 
-        var entity = userService.login(userId, password);
+        System.out.println("hi");
+        var userEntity = userService.login(userId, password);
 
-        return tokenBusiness.issueToken(entity);
+
+        tokenBusiness.cookieSettingToken(userId, response, 15, 60);
+
+        System.out.println("hi");
+        return userConverter.toResponse(userEntity);
     }
 
     public UserResponse register(Api<UserRegisterRequest> userRegisterRequestApi) {
@@ -61,11 +65,13 @@ public class UserBusiness {
         return userConverter.toResponse(saveEntity);
     }
 
-    public UserResponse me(User user) {
+    public UserResponse info(User user) {
 
-        var userInfo = userService.getUserWithThrow(user.getId());
+        var userId = user.getId();
 
-        return userConverter.toResponse(userInfo);
+        var entity = userService.findByIdWithThrow(userId);
+
+        return userConverter.toResponse(entity);
 
     }
 }

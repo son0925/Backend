@@ -1,15 +1,11 @@
 package org.aba2.calendar.common.domain.token.business;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.aba2.calendar.common.annotation.Business;
-import org.aba2.calendar.common.domain.token.converter.TokenConverter;
-import org.aba2.calendar.common.domain.token.model.TokenResponse;
 import org.aba2.calendar.common.domain.token.service.TokenService;
-import org.aba2.calendar.common.domain.user.model.UserEntity;
-import org.aba2.calendar.common.errorcode.ErrorCode;
-import org.aba2.calendar.common.exception.ApiException;
-
-import java.util.Optional;
 
 @Business
 @RequiredArgsConstructor
@@ -17,28 +13,43 @@ public class TokenBusiness {
 
     private final TokenService tokenService;
 
-    private final TokenConverter tokenConverter;
 
+    public String createAccessToken(String userId) {
+        return tokenService.getAccessToken(userId);
+    }
 
-    public TokenResponse issueToken(UserEntity userEntity) {
-        return Optional.ofNullable(userEntity)
-                .map(it -> {
-                    var userId = it.getUserId();
+    public String createRefreshToken(String userId) {
+        return tokenService.getRefreshToken(userId);
+    }
 
-                    var accessToken = tokenService.getAccessToken(userId);
-                    var refreshToken = tokenService.getRefreshToken(userId);
-
-                    return tokenConverter.toResponse(accessToken, refreshToken);
-                })
-                .orElseThrow(() -> new ApiException(ErrorCode.NULL_POINT))
-                ;
+    public String getUserIdFromToken(String token) {
+        return tokenService.getUserId(token);
     }
 
 
-    public String validationAccessToken(String token) {
-
+    public boolean validationToken(String token) {
         return tokenService.validationToken(token);
     }
 
+    public String getTokenFromCookie(HttpServletRequest request, String cookieName) {
+        return tokenService.getTokenFromCookie(request, cookieName);
+    }
 
+    public void cookieSettingToken(String userId, HttpServletResponse response, int accessTime, int refreshTime) {
+        var accessToken = createAccessToken(userId);
+        var refreshToken = createRefreshToken(userId);
+
+        var accessTokenCookie = new Cookie("accessToken", accessToken);
+        accessTokenCookie.setHttpOnly(true);
+        accessTokenCookie.setPath("/");
+        accessTokenCookie.setMaxAge(60 * accessTime);
+
+        var refreshTokenCookie = new Cookie("refreshToken", refreshToken);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(60 * refreshTime);
+
+        response.addCookie(accessTokenCookie);
+        response.addCookie(refreshTokenCookie);
+    }
 }

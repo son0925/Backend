@@ -1,42 +1,43 @@
 package org.aba2.calendar.common.domain.token.service;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.aba2.calendar.common.domain.token.ifs.TokenHelperIfs;
-import org.aba2.calendar.common.domain.token.model.TokenDto;
+import org.aba2.calendar.common.domain.token.helper.JwtTokenHelper;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
 public class TokenService {
 
-    private final TokenHelperIfs tokenHelperIfs;
+    private final JwtTokenHelper jwtTokenHelper;
 
 
-    public TokenDto getAccessToken(String id) {
-        var data = new HashMap<String, Object>();
-        data.put("userId", id);
-
-        return tokenHelperIfs.issueAccessToken(data);
+    public String getAccessToken(String id) {
+        return jwtTokenHelper.createAccessToken(id);
     }
 
-    public TokenDto getRefreshToken(String id) {
-        var data = new HashMap<String,Object>();
-
-        data.put("userId", id);
-
-        return tokenHelperIfs.issueRefreshToken(data);
+    public String getRefreshToken(String id) {
+        return jwtTokenHelper.createRefreshToken(id);
     }
 
+    public String getUserId(String token) {
+        return jwtTokenHelper.getUserIdFromToken(token);
+    }
 
-    public String validationToken(String token) {
-        var map = tokenHelperIfs.validationTokenWithThrow(token);
+    public boolean validationToken(String token) {
+        return jwtTokenHelper.validateToken(token);
+    }
 
-        var userId = map.get("userId");
-        System.out.println(userId);
-
-        return userId.toString();
+    public String getTokenFromCookie(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookie.getName().equals(cookieName)) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 
 }

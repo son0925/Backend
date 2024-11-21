@@ -1,6 +1,7 @@
 package org.aba2.calendar.resolver;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.aba2.calendar.common.annotation.UserSession;
 import org.aba2.calendar.common.domain.user.model.User;
 import org.aba2.calendar.common.domain.user.service.UserService;
@@ -13,6 +14,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class UserSessionResolver implements HandlerMethodArgumentResolver {
@@ -35,7 +37,6 @@ public class UserSessionResolver implements HandlerMethodArgumentResolver {
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
         // supportsParameter True 반환시 여기 실행
 
-
         // request context holder 에서 정보 찾아오기
         var requestContext = RequestContextHolder.getRequestAttributes();
 
@@ -43,7 +44,7 @@ public class UserSessionResolver implements HandlerMethodArgumentResolver {
         var userId = requestContext.getAttribute("userId", RequestAttributes.SCOPE_REQUEST);
 
         assert userId != null;
-        var userEntity = userService.getUserWithThrow(userId.toString());
+        var userEntity = userService.findByIdWithThrow(userId.toString());
 
         // 사용자 정보 세팅
         return User.builder()
@@ -53,5 +54,5 @@ public class UserSessionResolver implements HandlerMethodArgumentResolver {
                 .build()
                 ;
     }
-
 }
+

@@ -1,5 +1,6 @@
 package org.aba2.calendar.interceptor;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,6 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
 
     private final TokenBusiness tokenBusiness;
 
-
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         log.info("Autorization Integerceptor url : {}", request.getRequestURI());
@@ -40,24 +40,38 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        var accessToken = request.getHeader("authorization-token");
-        if (accessToken == null) {
-            throw new ApiException(TokenErrorCode.AUTHORIZATION_TOKEN_NOT_FOUND);
-        }
+        // 쿠키에서 토큰 가져오기
+        String accessToken = tokenBusiness.getTokenFromCookie(request, "accessToken");
+        String refreshToken = tokenBusiness.getTokenFromCookie(request, "refreshToken");
 
-        var userId = tokenBusiness.validationAccessToken(accessToken);
-
-        if (userId != null) {
-            // 로컬 스레드
-            var requestContext = Objects.requireNonNull(RequestContextHolder.getRequestAttributes());
-
-            // 스코프 지정
-            // SCOPE_REQUEST 이번 요청 동안만
-            requestContext.setAttribute("userId", userId, RequestAttributes.SCOPE_REQUEST);
+        // 액세스 토큰 검증
+        if (accessToken != null && tokenBusiness.validationToken(accessToken)) {
+            var userId = tokenBusiness.getUserIdFromToken(accessToken);
+            request.setAttribute("userId", userId); // HttpServletRequest에 userId를 저장
             return true;
         }
 
-        throw new ApiException(ErrorCode.BAD_REQUEST, "인증 실패");
+        // 액세스 토큰이 유효하지 않을 경우, 리프레시 토큰 검증
+        if (refreshToken != null && tokenBusiness.validationToken(refreshToken)) {
+            String userId = tokenBusiness.getUserIdFromToken(refreshToken);
+
+            // 새로운 액세스 토큰 생성
+            String newAccessToken = tokenBusiness.createAccessToken(userId);
+
+            // 새 액세스 토큰을 쿠키로 전달
+            Cookie accessTokenCookie = new Cookie("accessToken", newAccessToken);
+            accessTokenCookie.setHttpOnly(true);
+            accessTokenCookie.setPath("/");
+            accessTokenCookie.setMaxAge(60 * 15); // 15분
+
+            response.addCookie(accessTokenCookie);
+
+            request.setAttribute("userId", userId); // HttpServletRequest에 userId를 저장
+            return true;
+        }
+
+        // 둘 다 유효하지 않은 경우
+        throw new ApiException(ErrorCode.BAD_REQUEST, "다시 로그인을 해주세요");
     }
 
     @Override
